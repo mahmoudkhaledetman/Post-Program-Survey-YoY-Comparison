@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Post-Program Survey — Year-over-Year Comparison (Concept)</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#0F1B2D;
+  --panel:#16253D;
+  --panel-2:#1C2E4A;
+  --line:#2A4062;
+  --ink:#EAF0FB;
+  --ink-dim:#9FB0CB;
+  --amber:#E8A33D;
+  --amber-dim:#8A6122;
+  --teal:#4FBEA6;
+  --rose:#E17E7E;
+  --y1:#5B7DB1;
+  --y2:#4FBEA6;
+  --y3:#E8A33D;
+  --radius:10px;
+  font-family:"Inter",system-ui,-apple-system,Segoe UI,sans-serif;
+}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--bg);color:var(--ink);}
+h1,h2,h3,h4{font-family:"Source Serif 4","Georgia",serif;font-weight:600;margin:0;}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:18px 28px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,#13213a00,#0000);position:sticky;top:0;background:#0F1B2Dee;backdrop-filter:blur(6px);z-index:20;}
+.brand{display:flex;align-items:center;gap:12px;}
+.brand .mark{width:34px;height:34px;border-radius:8px;background:conic-gradient(from 220deg,var(--amber),var(--teal),var(--y1),var(--amber));display:flex;align-items:center;justify-content:center;font-family:"Source Serif 4",serif;font-weight:700;color:#0F1B2D;font-size:15px;}
+.brand h1{font-size:18px;letter-spacing:.2px;}
+.brand span{display:block;font-size:11px;color:var(--ink-dim);letter-spacing:.6px;text-transform:uppercase;margin-top:2px;}
+
+.filterbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+.chip-group{display:flex;gap:6px;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:4px;}
+.chip{border:none;background:transparent;color:var(--ink-dim);font-size:12.5px;padding:6px 13px;border-radius:999px;cursor:pointer;transition:.15s;font-weight:600;}
+.chip.on{background:var(--amber);color:#0F1B2D;}
+.chip.on.y1{background:var(--y1);color:#fff;}
+.chip.on.y2{background:var(--y2);color:#0F1B2D;}
+.chip.on.y3{background:var(--y3);color:#0F1B2D;}
+.select{background:var(--panel);border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:7px 10px;font-size:12.5px;}
+
+.tabs{display:flex;gap:2px;padding:0 28px;border-bottom:1px solid var(--line);overflow-x:auto;background:#0F1B2D;position:sticky;top:69px;z-index:19;}
+.tab{padding:13px 16px;font-size:13px;color:var(--ink-dim);cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;font-weight:600;}
+.tab.active{color:var(--ink);border-bottom-color:var(--amber);}
+
+.wrap{padding:24px 28px 60px;max-width:1400px;margin:0 auto;}
+.page{display:none;}
+.page.active{display:block;animation:fade .25s ease;}
+@keyframes fade{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
+
+.note{background:var(--panel);border:1px dashed var(--line);border-radius:var(--radius);padding:12px 16px;font-size:12.5px;color:var(--ink-dim);margin-bottom:20px;line-height:1.5;}
+.note b{color:var(--amber);}
+
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px;}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;position:relative;overflow:hidden;}
+.kpi .lbl{font-size:11.5px;color:var(--ink-dim);text-transform:uppercase;letter-spacing:.5px;font-weight:600;}
+.kpi .val{font-family:"Source Serif 4",serif;font-size:30px;margin:6px 0 4px;}
+.kpi .delta{font-size:12px;font-weight:700;display:inline-flex;align-items:center;gap:4px;}
+.delta.up{color:var(--teal);} .delta.down{color:var(--rose);}
+.kpi canvas{position:absolute;bottom:0;left:0;width:100%!important;height:34px!important;opacity:.55;}
+
+.grid2{display:grid;grid-template-columns:1.3fr 1fr;gap:16px;margin-bottom:16px;}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px;}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;}
+.card h3{font-size:14.5px;margin-bottom:2px;}
+.card .sub{font-size:11.5px;color:var(--ink-dim);margin-bottom:14px;}
+.chart-box{position:relative;height:230px;}
+.chart-box.tall{height:300px;}
+
+/* heatmap matrix for multi-answer questions across years */
+table.matrix{width:100%;border-collapse:collapse;font-size:12.5px;}
+table.matrix th{text-align:left;font-weight:600;color:var(--ink-dim);padding:6px 8px;font-size:11px;text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid var(--line);}
+table.matrix th.yr{text-align:center;}
+table.matrix td{padding:7px 8px;border-bottom:1px solid #1c2e4a80;}
+table.matrix td.yr{text-align:center;font-variant-numeric:tabular-nums;font-weight:700;border-radius:6px;}
+table.matrix tr td:first-child{color:var(--ink);}
+.legend-scale{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--ink-dim);margin-top:10px;}
+.legend-scale .sw{width:14px;height:10px;border-radius:2px;}
+
+.badge{display:inline-block;font-size:10.5px;padding:2px 8px;border-radius:999px;background:var(--panel-2);color:var(--ink-dim);border:1px solid var(--line);margin-left:8px;font-weight:600;}
+.footer-note{margin-top:30px;font-size:11.5px;color:var(--ink-dim);text-align:center;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <div class="mark">PA</div>
+    <div>
+      <h1>Post-Program Survey — YoY Comparison</h1>
+      <span>Concept · Sample data for layout review</span>
+    </div>
+  </div>
+  <div class="filterbar">
+    <div class="chip-group" id="yearChips">
+      <button class="chip on y1" data-y="2024">2024</button>
+      <button class="chip on y2" data-y="2025">2025</button>
+      <button class="chip on y3" data-y="2026">2026</button>
+    </div>
+    <select class="select"><option>All Countries</option><option>China</option><option>USA</option><option>South Korea</option><option>India</option></select>
+    <select class="select"><option>All Seasons</option><option>Spring</option><option>Summer</option></select>
+  </div>
+</div>
+
+<div class="tabs" id="tabs">
+  <div class="tab active" data-p="overview">Overview</div>
+  <div class="tab" data-p="ri">Research Institute &amp; Admissions</div>
+  <div class="tab" data-p="community">Community &amp; Academic Engagement</div>
+  <div class="tab" data-p="faculty">Faculty Mentorship</div>
+  <div class="tab" data-p="pca">Cohort Advising Team</div>
+</div>
+
+<div class="wrap">
+
+<!-- ================= OVERVIEW ================= -->
+<div class="page active" id="overview">
+  <div class="note"><b>How to read this:</b> every card below compares the same question across the years selected above. Solid KPI trends handle single-answer / rating questions directly. Multi-answer questions (checkbox lists, ranked choices, satisfaction categories with 4–6 options) use the small-multiple bar or the heat-matrix pattern shown further down — see the note on each chart for the Power BI equivalent.</div>
+
+  <div class="kpi-row">
+    <div class="kpi"><div class="lbl">Total Responses</div><div class="val" id="k1v">—</div><div class="delta" id="k1d"></div><canvas id="k1s"></canvas></div>
+    <div class="kpi"><div class="lbl">Response Rate</div><div class="val" id="k2v">—</div><div class="delta" id="k2d"></div><canvas id="k2s"></canvas></div>
+    <div class="kpi"><div class="lbl">Overall Program Rating (Excellent+Very Good)</div><div class="val" id="k3v">—</div><div class="delta" id="k3d"></div><canvas id="k3s"></canvas></div>
+    <div class="kpi"><div class="lbl">Would Recommend (score ≥ 8/10)</div><div class="val" id="k4v">—</div><div class="delta" id="k4d"></div><canvas id="k4s"></canvas></div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <h3>Headline satisfaction trend</h3>
+      <div class="sub">3 core rating questions, tracked year over year · line chart</div>
+      <div class="chart-box tall"><canvas id="trendLine"></canvas></div>
+    </div>
+    <div class="card">
+      <h3>Responses by Country</h3>
+      <div class="sub">grouped column, one cluster per country, one bar per year</div>
+      <div class="chart-box tall"><canvas id="countryBar"></canvas></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>"Overall, how would you rate your Pioneer experience?" <span class="badge">multi-answer · 5 options</span></h3>
+    <div class="sub">Heat-matrix pattern: rows = answer option (kept in fixed Likert order), columns = year, cell = % of respondents. Color intensity = magnitude, so a shift is visible at a glance without needing 3 separate pie charts.</div>
+    <table class="matrix" id="matrixOverall"></table>
+    <div class="legend-scale">Low <div class="sw" style="background:#1C2E4A"></div><div class="sw" style="background:#2E4E77"></div><div class="sw" style="background:#3E76A8"></div><div class="sw" style="background:#4FBEA6"></div><div class="sw" style="background:#E8A33D"></div> High share of responses</div>
+  </div>
+</div>
+
+<!-- ================= RESEARCH INSTITUTE ================= -->
+<div class="page" id="ri">
+  <div class="note">This section mirrors the current <b>"Research Institute"</b> and <b>"RI Design &amp; Admissions"</b> pages, which use the unpivoted <code>New Question / New Value</code> fields. Adding <code>Year</code> as a column turns every one of these into a YoY-ready chart with no redesign of the question list itself.</div>
+  <div class="grid2">
+    <div class="card">
+      <h3>Admissions process satisfaction <span class="badge">5-pt scale</span></h3>
+      <div class="sub">100% stacked bar · one bar per year, segments = answer options</div>
+      <div class="chart-box"><canvas id="riStacked"></canvas></div>
+    </div>
+    <div class="card">
+      <h3>How scholars first found the program <span class="badge">multi-select</span></h3>
+      <div class="sub">small multiples: one mini-chart per source, trend across years</div>
+      <div class="chart-box"><canvas id="riSmallMult"></canvas></div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>Ranked choice: "First / Second / Third / Fourth choice concentration" <span class="badge">ranked, multi-answer</span></h3>
+    <div class="sub">heat-matrix: rows = concentration, columns = Year × Rank — this is the pattern for ranking-type questions, which don't compress well into a single stacked bar.</div>
+    <table class="matrix" id="matrixRank"></table>
+  </div>
+</div>
+
+<!-- ================= COMMUNITY ================= -->
+<div class="page" id="community">
+  <div class="note">Source page: <b>"Community &amp; Academic Engagement"</b> — satisfaction with Writing Center, Oberlin academic support, Starting Strong modules, Alumni Workshops, etc. All are the same 5-category satisfaction scale, so they share one matrix template.</div>
+  <div class="card">
+    <h3>Satisfaction with academic support resources <span class="badge">multi-answer, 6 resources × 5 options</span></h3>
+    <div class="sub">heat-matrix: rows = resource, columns = year, cell = "% Extremely/Very Satisfied" (a rolled-up top-2-box score, with the full distribution available on hover/drill-through)</div>
+    <table class="matrix" id="matrixCommunity"></table>
+  </div>
+  <div class="grid2">
+    <div class="card">
+      <h3>Gearing Up for Growth — perceived value</h3>
+      <div class="sub">grouped bar, value categories × year</div>
+      <div class="chart-box"><canvas id="gufgBar"></canvas></div>
+    </div>
+    <div class="card">
+      <h3>Peer review helpfulness trend</h3>
+      <div class="sub">line chart of top-2-box % across years</div>
+      <div class="chart-box"><canvas id="peerLine"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= FACULTY ================= -->
+<div class="page" id="faculty">
+  <div class="note">Source page: <b>"Faculty Mentorship"</b>. Two headline cards (professor satisfaction, peer review) plus donut breakdowns become one comparable trend + matrix pair here.</div>
+  <div class="grid2">
+    <div class="card">
+      <h3>Mentoring professor performance</h3>
+      <div class="sub">100% stacked bar, 1 bar per year</div>
+      <div class="chart-box"><canvas id="facStacked"></canvas></div>
+    </div>
+    <div class="card">
+      <h3>Top-2-box trend: professor satisfaction vs peer review</h3>
+      <div class="sub">line chart, two series</div>
+      <div class="chart-box"><canvas id="facLine"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= PCA ================= -->
+<div class="page" id="pca">
+  <div class="note">Source page: <b>"Cohort Advising Team"</b>. PCA has several sub-attributes (Friendliness, Helpfulness, Mentorship, Response Time) — a natural fit for the heat-matrix so all four are visible together instead of four separate donuts per year.</div>
+  <div class="card">
+    <h3>PCA sub-attribute ratings <span class="badge">multi-answer · 4 attributes × 5 options</span></h3>
+    <table class="matrix" id="matrixPCA"></table>
+  </div>
+  <div class="card" style="margin-top:16px;">
+    <h3>Overall PCA + Coach rating</h3>
+    <div class="sub">100% stacked bar · one bar per year</div>
+    <div class="chart-box"><canvas id="pcaStacked"></canvas></div>
+  </div>
+</div>
+
+<div class="footer-note">Wireframe only — all figures are illustrative placeholders, not real survey results.</div>
+</div>
+
+<script>
+Chart.defaults.color = '#9FB0CB';
+Chart.defaults.font.family = 'Inter, sans-serif';
+Chart.defaults.font.size = 11;
+Chart.defaults.borderColor = '#2A4062';
+
+const YEARS = ['2024','2025','2026'];
+const YC = {2024:'#5B7DB1',2025:'#4FBEA6',2026:'#E8A33D'};
+let active = new Set(YEARS);
+
+// ---------- sample data ----------
+const kpi = {
+  responses: {2024:412, 2025:388, 2026:465},
+  respRate:  {2024:71, 2025:68, 2026:76},
+  overallTop2: {2024:74, 2025:70, 2026:81},
+  recommend: {2024:82, 2025:79, 2026:87}
+};
+const overallDist = { // "Overall Pioneer experience"
+  labels:['Excellent','Very Good','Good','Fair','Poor'],
+  2024:[38,36,18,6,2], 2025:[34,36,20,7,3], 2026:[46,35,14,4,1]
+};
+const countryData = {
+  countries:['China','USA','S. Korea','India','Other'],
+  2024:[140,80,60,70,62], 2025:[128,74,58,66,62], 2026:[150,92,70,80,73]
+};
+const riStackedData = { labels:['Extremely Satisfied','Very Satisfied','Satisfied','Somewhat Satisfied','Not Satisfied'],
+  2024:[30,34,24,9,3], 2025:[26,33,26,11,4], 2026:[37,35,20,6,2] };
+const rankMatrix = { rows:['STEM Research','Social Science','Humanities','Business/Econ'],
+  2024:[42,27,18,13], 2025:[39,29,19,13], 2026:[46,25,17,12] };
+const communityMatrix = { rows:['Writing Center','Oberlin Academic Support','Starting Strong Modules','Research Seminar 1','Research Seminar 2','Alumni Workshops'],
+  2024:[61,58,72,65,60,55], 2025:[57,54,69,63,58,52], 2026:[68,63,77,70,66,60] };
+const gufgData = { labels:['Extremely Valuable','Very Valuable','Valuable','Somewhat Valuable','Not Valuable'],
+  2024:[28,33,25,10,4], 2025:[25,31,27,12,5], 2026:[34,34,21,8,3] };
+const peerReviewTrend = {2024:66,2025:61,2026:71};
+const facStackedData = { labels:['Extremely Satisfied','Very Satisfied','Satisfied','Somewhat Satisfied','Not Satisfied'],
+  2024:[41,32,18,6,3], 2025:[36,33,20,8,3], 2026:[47,31,15,5,2] };
+const profTrend = {2024:73,2025:69,2026:78};
+const pcaMatrix = { rows:['PCA Friendliness','PCA Helpfulness','PCA Mentorship','Response Time'],
+  2024:[70,66,63,58], 2025:[66,62,60,55], 2026:[75,71,68,64] };
+const pcaStackedData = { labels:['Excellent','Very Good','Good','Fair','Poor'],
+  2024:[35,34,21,7,3], 2025:[31,33,23,9,4], 2026:[40,34,18,6,2] };
+
+function fmt(n){return n.toLocaleString();}
+function pct(n){return n+'%';}
+function delta(a,b){ // b vs a, a=older
+  const d = b-a; const s = d>=0?'up':'down'; const arrow = d>=0?'▲':'▼';
+  return {s, txt:`${arrow} ${Math.abs(d)}${typeof a==='number'&&a<100&&b<100?' pts':''} vs prior year`};
+}
+function sparkline(id, series, color){
+  const ctx = document.getElementById(id);
+  return new Chart(ctx,{type:'line',data:{labels:series.map((_,i)=>i),datasets:[{data:series,borderColor:color,borderWidth:2,pointRadius:0,fill:false,tension:.3}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{enabled:false}},scales:{x:{display:false},y:{display:false}}}});
+}
+
+function selectedYears(){ return YEARS.filter(y=>active.has(y)); }
+
+function renderKPIs(){
+  const ys = selectedYears();
+  const last = ys[ys.length-1], first = ys[0];
+  const set = (idv,idd,obj,isPct)=>{
+    document.getElementById(idv).textContent = isPct? pct(obj[last]) : fmt(obj[last]);
+    const d = delta(obj[first], obj[last]);
+    const el = document.getElementById(idd);
+    el.className = 'delta '+d.s; el.textContent = d.txt;
+  };
+  set('k1v','k1d',kpi.responses,false);
+  set('k2v','k2d',kpi.respRate,true);
+  set('k3v','k3d',kpi.overallTop2,true);
+  set('k4v','k4d',kpi.recommend,true);
+  ['k1s','k2s','k3s','k4s'].forEach(id=>{ const c=document.getElementById(id); if(c._chart) c._chart.destroy(); });
+  document.getElementById('k1s')._chart = sparkline('k1s', ys.map(y=>kpi.responses[y]), '#4FBEA6');
+  document.getElementById('k2s')._chart = sparkline('k2s', ys.map(y=>kpi.respRate[y]), '#5B7DB1');
+  document.getElementById('k3s')._chart = sparkline('k3s', ys.map(y=>kpi.overallTop2[y]), '#E8A33D');
+  document.getElementById('k4s')._chart = sparkline('k4s', ys.map(y=>kpi.recommend[y]), '#E17E7E');
+}
+
+let charts = {};
+function killChart(key){ if(charts[key]){ charts[key].destroy(); } }
+
+function renderTrendLine(){
+  killChart('trend');
+  const ys = selectedYears();
+  charts.trend = new Chart(document.getElementById('trendLine'),{
+    type:'line',
+    data:{labels:ys, datasets:[
+      {label:'Overall Rating (top-2-box)', data:ys.map(y=>kpi.overallTop2[y]), borderColor:'#E8A33D', backgroundColor:'#E8A33D22', tension:.3, fill:true},
+      {label:'Recommend (≥8/10)', data:ys.map(y=>kpi.recommend[y]), borderColor:'#4FBEA6', backgroundColor:'#4FBEA622', tension:.3, fill:true},
+      {label:'Peer Review helpful (top-2-box)', data:ys.map(y=>peerReviewTrend[y]), borderColor:'#5B7DB1', backgroundColor:'#5B7DB122', tension:.3, fill:true},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false, plugins:{legend:{position:'bottom',labels:{boxWidth:10}}}, scales:{y:{min:40,max:100,ticks:{callback:v=>v+'%'}}}}
+  });
+}
+
+function renderCountryBar(){
+  killChart('country');
+  const ys = selectedYears();
+  charts.country = new Chart(document.getElementById('countryBar'),{
+    type:'bar',
+    data:{labels:countryData.countries, datasets: ys.map(y=>({label:y, data:countryData[y], backgroundColor:YC[y], borderRadius:4}))},
+    options:{responsive:true,maintainAspectRatio:false, plugins:{legend:{position:'bottom',labels:{boxWidth:10}}}, scales:{x:{stacked:false}}}
+  });
+}
+
+function colorFor(v){
+  // 0-100 scale -> palette
+  if(v>=75) return '#E8A33D';
+  if(v>=60) return '#4FBEA6';
+  if(v>=45) return '#3E76A8';
+  if(v>=30) return '#2E4E77';
+  return '#1C2E4A';
+}
+
+function buildDistMatrix(tableId, data){
+  const ys = selectedYears();
+  const t = document.getElementById(tableId);
+  let head = '<tr><th>Answer</th>' + ys.map(y=>`<th class="yr">${y}</th>`).join('') + '</tr>';
+  let rows = data.labels.map((lab,i)=>{
+    return '<tr><td>'+lab+'</td>' + ys.map(y=> {
+      const v = data[y][i];
+      return `<td class="yr" style="background:${colorFor(v)}22;color:${v>=60?'#EAF0FB':'#9FB0CB'}">${v}%</td>`;
+    }).join('') + '</tr>';
+  }).join('');
+  t.innerHTML = head+rows;
+}
+
+function buildRowMatrix(tableId, data, suffix){
+  const ys = selectedYears();
+  const t = document.getElementById(tableId);
+  let head = '<tr><th>'+ (suffix||'Item') +'</th>' + ys.map(y=>`<th class="yr">${y}</th>`).join('') + '</tr>';
+  let rows = data.rows.map((lab,i)=>{
+    return '<tr><td>'+lab+'</td>' + ys.map(y=> {
+      const v = data[y][i];
+      return `<td class="yr" style="background:${colorFor(v)}22;color:${v>=60?'#EAF0FB':'#9FB0CB'}">${v}%</td>`;
+    }).join('') + '</tr>';
+  }).join('');
+  t.innerHTML = head+rows;
+}
+
+function stackedBar(canvasId, key, data){
+  killChart(key);
+  const ys = selectedYears();
+  const colors = ['#E8A33D','#E0B368','#5B7DB1','#3E5C86','#E17E7E'];
+  charts[key] = new Chart(document.getElementById(canvasId),{
+    type:'bar',
+    data:{labels:ys, datasets: data.labels.map((lab,i)=>({
+      label:lab, data: ys.map(y=>data[y][i]), backgroundColor: colors[i%colors.length], stack:'s'
+    }))},
+    options:{responsive:true,maintainAspectRatio:false, indexAxis:'y',
+      plugins:{legend:{position:'bottom',labels:{boxWidth:10,font:{size:10}}}},
+      scales:{x:{stacked:true,max:100,ticks:{callback:v=>v+'%'}}, y:{stacked:true}}}
+  });
+}
+
+function groupedBar(canvasId, key, data){
+  killChart(key);
+  const ys = selectedYears();
+  const colors = {2024:'#5B7DB1',2025:'#4FBEA6',2026:'#E8A33D'};
+  charts[key] = new Chart(document.getElementById(canvasId),{
+    type:'bar',
+    data:{labels:data.labels, datasets: ys.map(y=>({label:y, data:data[y], backgroundColor:colors[y], borderRadius:4}))},
+    options:{responsive:true,maintainAspectRatio:false, plugins:{legend:{position:'bottom',labels:{boxWidth:10}}}, scales:{y:{max:50,ticks:{callback:v=>v+'%'}}}}
+  });
+}
+
+function lineSingle(canvasId, key, seriesObj, color, label){
+  killChart(key);
+  const ys = selectedYears();
+  charts[key] = new Chart(document.getElementById(canvasId),{
+    type:'line',
+    data:{labels:ys, datasets:[{label:label, data:ys.map(y=>seriesObj[y]), borderColor:color, backgroundColor:color+'33', fill:true, tension:.3}]},
+    options:{responsive:true,maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{min:40,max:100,ticks:{callback:v=>v+'%'}}}}
+  });
+}
+
+function smallMultiples(canvasId, key){
+  killChart(key);
+  const ys = selectedYears();
+  const sources = {
+    'Web Search':[22,25,30], 'School Counselor':[30,27,26], 'Alumni Referral':[18,20,24], 'Social Media':[15,17,14], 'Other':[15,11,6]
+  };
+  const idx = {2024:0,2025:1,2026:2};
+  charts[key] = new Chart(document.getElementById(canvasId),{
+    type:'bar',
+    data:{labels:Object.keys(sources), datasets: ys.map(y=>({label:y, data:Object.values(sources).map(arr=>arr[idx[y]]), backgroundColor:YC[y], borderRadius:4}))},
+    options:{responsive:true,maintainAspectRatio:false, plugins:{legend:{position:'bottom',labels:{boxWidth:10}}}, scales:{y:{max:35,ticks:{callback:v=>v+'%'}}}}
+  });
+}
+
+function renderAll(){
+  renderKPIs();
+  buildDistMatrix('matrixOverall', overallDist);
+  renderTrendLine();
+  renderCountryBar();
+  stackedBar('riStacked','riStk', riStackedData);
+  smallMultiples('riSmallMult','riSm');
+  buildRowMatrix('matrixRank', rankMatrix, 'Concentration');
+  buildRowMatrix('matrixCommunity', communityMatrix, 'Resource');
+  groupedBar('gufgBar','gufg', gufgData);
+  lineSingle('peerLine','peer', peerReviewTrend, '#4FBEA6', 'Peer review top-2-box');
+  stackedBar('facStacked','facStk', facStackedData);
+  killChart('facLine');
+  const ys = selectedYears();
+  charts.facLine = new Chart(document.getElementById('facLine'),{
+    type:'line',
+    data:{labels:ys, datasets:[
+      {label:'Professor satisfaction', data:ys.map(y=>profTrend[y]), borderColor:'#E8A33D', backgroundColor:'#E8A33D22', fill:true, tension:.3},
+      {label:'Peer review helpful', data:ys.map(y=>peerReviewTrend[y]), borderColor:'#4FBEA6', backgroundColor:'#4FBEA622', fill:true, tension:.3}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false, plugins:{legend:{position:'bottom',labels:{boxWidth:10}}}, scales:{y:{min:40,max:100,ticks:{callback:v=>v+'%'}}}}
+  });
+  buildRowMatrix('matrixPCA', pcaMatrix, 'Attribute');
+  stackedBar('pcaStacked','pcaStk', pcaStackedData);
+}
+
+document.getElementById('yearChips').addEventListener('click', e=>{
+  const btn = e.target.closest('.chip'); if(!btn) return;
+  const y = btn.dataset.y;
+  if(active.has(y)){ if(active.size>1) active.delete(y); } else { active.add(y); }
+  btn.classList.toggle('on', active.has(y));
+  renderAll();
+});
+
+document.getElementById('tabs').addEventListener('click', e=>{
+  const t = e.target.closest('.tab'); if(!t) return;
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+  t.classList.add('active');
+  document.getElementById(t.dataset.p).classList.add('active');
+});
+
+renderAll();
+</script>
+</body>
+</html>
